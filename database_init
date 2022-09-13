@@ -1,0 +1,18 @@
+CREATE TABLE user_info (
+	user_id TEXT(32),
+	token TEXT(32),
+	password TEXT(32),
+	ip TEXT(32),
+	CONSTRAINT user_info_PK PRIMARY KEY (user_id)
+);
+
+CREATE TABLE file_list (
+	file_id TEXT,
+	file_size INTEGER,
+	chunk_sum INTEGER,
+	file_name TEXT,
+	date INTEGER,
+	user_id TEXT(32),
+	CONSTRAINT file_list_PK PRIMARY KEY (file_id),
+	CONSTRAINT file_list_FK FOREIGN KEY (user_id) REFERENCES user_info(user_id) ON DELETE CASCADE
+);
