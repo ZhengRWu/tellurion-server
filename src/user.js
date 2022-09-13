@@ -67,9 +67,6 @@ let upload_file_metadata = async (token, file_size, file_name, note, file_path) 
                 resolve({ code: 11003, value: "State err" })
             } else {
                 var chunks_sum = Number.parseInt(file_size / 10485760)
-                if(chunks_sum === 0){
-                    chunks_sum = 1
-                }
                 var date = new Date().getTime()
                 var file_id = hash_get(`${file_size}_${file_name}_${date}`)
                 global.sqlitedb.exec(`insert into file_list values ('${file_id}', ${file_size},${chunks_sum}, '${file_name}',${date},'${row[0].user_id}', '${note}','${file_path}') `, (info) => {
@@ -115,6 +112,9 @@ var search_file = async (token, user_name, file_name, page, limit) => {
                     var all_num = row[0]["COUNT(*)"]
                     global.sqlitedb.all(`SELECT file_id, file_size, file_name, date, user_name, note FROM file_list fl right join user_info ui on fl.user_id = ui.user_id WHERE user_name LIKE '%${user_name}%' AND file_name LIKE '%${file_name}%' limit ${limit} offset ${limit * (page - 1)}`, function (err, row) {
                         transform_data_toString(row)
+                        for (var i = 0; i < row.length; i++) {
+                            row[i].date = formatDate(row[i].date)
+                        }
                         resolve({ code: 0, count: all_num, data: row })
                     })
                 })
@@ -131,6 +131,9 @@ var get_share_file = function (token) {
             } else {
                 global.sqlitedb.all(`SELECT file_id, file_name,file_path, file_size, date, note FROM file_list WHERE user_id = "${row[0].user_id}" `, (err, row) => {
                     transform_data_toString(row)
+                    for (var i = 0; i < row.length; i++) {
+                        row[i].date = formatYearDate(row[i].date)
+                    }
                     resolve({ code: 0, data: row })
                 })
             }
@@ -145,7 +148,7 @@ var get_target_ip = function (token,file_id) {
             if (row.length === 0) {
                 resolve({ code: 11003, value: "State err" })
             } else {
-                global.sqlitedb.all(`SELECT ui.ip, ui.port FROM file_list fl right join user_info ui on fl.user_id = ui.user_id WHERE fl.file_id = '${file_id}'`,(err,row)=>{
+                global.sqlitedb.all(`SELECT ui.ip, ui.port, fl.chunk_sum FROM file_list fl right join user_info ui on fl.user_id = ui.user_id WHERE fl.file_id = '${file_id}'`,(err,row)=>{
                     resolve({code:11000, data:row[0]})
                 })
              }
